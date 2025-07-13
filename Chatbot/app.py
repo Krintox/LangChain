@@ -1,38 +1,33 @@
-# Q&A Chatbot
-from langchain.llms import OpenAI
-
-#from dotenv import load_dotenv
-
-#load_dotenv()  # take environment variables from .env.
-
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_community.llms import Ollama
 import streamlit as st
 import os
+from dotenv import load_dotenv
 
+load_dotenv()
 
-## Function to load OpenAI model and get respones
+os.environ["LANGCHAIN_TRACING_V2"]="true"
+os.environ["LANGCHAIN_API_KEY"]=os.getenv("LANGCHAIN_API_KEY")
 
-def get_openai_response(question):
-    llm=OpenAI(model_name="text-davinci-003",temperature=0.5)
-    response=llm(question)
-    return response
+## Prompt Template
 
-##initialize our streamlit app
+prompt=ChatPromptTemplate.from_messages(
+    [
+        ("system","You are a helpful assistant. Please response to the user queries"),
+        ("user","Question:{question}")
+    ]
+)
+## streamlit framework
 
-st.set_page_config(page_title="Q&A Demo")
+st.title('Langchain Demo With LLAMA2 API')
+input_text=st.text_input("Search the topic u want")
 
-st.header("Langchain Application")
+# ollama LLAma2 LLm 
+llm=Ollama(model="llama2")
+output_parser=StrOutputParser()
+chain=prompt|llm|output_parser
 
-input=st.text_input("Input: ",key="input")
-response=get_openai_response(input)
-
-submit=st.button("Ask the question")
-
-## If ask button is clicked
-
-if submit:
-    st.subheader("The Response is")
-    st.write(response)
-
-
-
-
+if input_text:
+    st.write(chain.invoke({"question":input_text}))
